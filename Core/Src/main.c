@@ -2330,10 +2330,10 @@ void Send_Set_Infomation(uint8_t main, uint8_t sub){
 
 void run_test(void){
 
-	for(int i=0; i<4 ; i++){
+	for(int i=0; i<8 ; i++){
 		for(int j=0; j<8; j++){
 			Send_Set_Infomation(i+1, j+1);
-			HAL_Delay(10);
+			HAL_Delay(500);
 		}
 	}
 
