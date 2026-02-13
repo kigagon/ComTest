@@ -30,6 +30,8 @@ void Check_UI_UART_Receive(int check_val)
 
 	    uint8_t Crc_Data_D[456 - 6];
 
+	    uint8_t Crc_Data_TD[1110 - 6];
+
 	    uint16_t cal_crc16_D = 0, Uart2_crc16_o = 0;
 
 	    uint8_t CRC_Mode = 0  , CRC_Ex_Mode = 1 , CRC16_Mode = 2 ;
@@ -83,6 +85,60 @@ void Check_UI_UART_Receive(int check_val)
 	    			Crc_Data_D[i] = UI_UART_RX_buf[i+2];
 				}
 	    		cal_crc16_D = CRC16(Crc_Data_D, sizeof(Crc_Data_D)/sizeof(uint8_t));
+	    		Uart2_crc16_o = (((UI_UART_RX_buf[UI_UART_RX_buf_Lan - 4])<<8)&0xff00)
+	    				|((UI_UART_RX_buf[UI_UART_RX_buf_Lan - 3])&0x00ff);
+	    	}
+
+			if((Uart2_crc == Uart2_crc_o) | (cal_crc16_D == Uart2_crc16_o))
+			{
+				UI_UART_buf_count_tmp = UI_UART_buf_count;
+
+				UI_Cmd_Func();
+
+				UI_UART_Receive_complete = 0;
+				UI_UART_buf_count_tmp = 0;
+				UI_UART_State = 0;
+				UI_UART_buf_count = 0;
+				for(int i = 0; i < UI_UART_buf_len; i++){
+					UI_UART_RX_buf[i] = 0;
+				}
+			}
+			else
+			{
+				UI_UART_Receive_complete = 0;
+				UI_UART_buf_count_tmp = 0;
+				UI_UART_State = 0;
+				UI_UART_buf_count = 0;
+				for(int i = 0; i < UI_UART_buf_len ; i++){
+					UI_UART_RX_buf[i] = 0;
+				}
+			}
+			HAL_GPIO_WritePin(SYS_LED2_GPIO_Port, SYS_LED2_Pin,GPIO_PIN_SET);
+	    }
+	    if(UI_UART_RX_buf[3] == 'r'){
+
+	    	if(UI_UART_RX_buf[2] == 'c'){		//중계기 정보 요청  : 요청한 계통의 모든 정보를 읽는다.
+	    		CRC_Mode = CRC16_Mode;
+	    	}
+	    	else if(UI_UART_RX_buf[2] == 'r'){	//중계기 설정  : 중계기의 출력 설정 중계기별로 설정
+	    		CRC_Mode = CRC16_Mode;
+			}
+	    	else if(UI_UART_RX_buf[2] == 'j'){	// 버전 정보 요청
+	    		CRC_Mode = CRC16_Mode;
+			}
+
+	    	if (CRC_Mode == CRC_Ex_Mode){
+	    		Uart2_crc = 0;
+				for(int i=2; i< (UI_UART_RX_buf_Lan - 3) ; i++){
+					Uart2_crc = Uart2_crc ^ UI_UART_RX_buf[i];
+				}
+				Uart2_crc_o = UI_UART_RX_buf[UI_UART_RX_buf_Lan - 3];
+	    	}
+	    	else if (CRC_Mode == CRC16_Mode){
+	    		for(int i=0; i< (UI_UART_RX_buf_Lan - 6); i++){
+	    			Crc_Data_TD[i] = UI_UART_RX_buf[i+2];
+				}
+	    		cal_crc16_D = CRC16(Crc_Data_TD, sizeof(Crc_Data_TD)/sizeof(uint8_t));
 	    		Uart2_crc16_o = (((UI_UART_RX_buf[UI_UART_RX_buf_Lan - 4])<<8)&0xff00)
 	    				|((UI_UART_RX_buf[UI_UART_RX_buf_Lan - 3])&0x00ff);
 	    	}
@@ -212,6 +268,9 @@ void UI_Cmd_Func(void){
 			 else if(UI_UART_RX_buf[3] == 0x6C){	//I' 등록 정보 전송 완
 				 UI_Com_Func_Anal_LED_Set();
 				 Init_Group_Data();
+			 }
+			 else if(UI_UART_RX_buf[3] == 0x72){		// 'r' Repeater information request: Read all information of the requested system.
+				 UI_Cmd_Func_r();
 			 }
 		}
 	}
@@ -1446,3 +1505,14 @@ void Init_Group_Data(void){
 		}
 	}
 }
+
+void UI_Cmd_Func_r(void){
+	uint8_t main, sub;
+	main = UI_UART_RX_buf[4]-1;
+	sub = UI_UART_RX_buf[5]-1;
+	for(int i=0; i<Repeater_Data_Total; i++){
+		Group_Tmp_Data[main][sub][i] = UI_UART_RX_buf[i];
+	}
+
+}
+

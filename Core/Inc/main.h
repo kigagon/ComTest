@@ -75,6 +75,10 @@ void delay_us(uint16_t time);
 void Compile_Date(void);
 
 void Read_Sub_Version(void);
+
+void Read_Sub_Group(uint8_t main, uint8_t sub);
+void run_test(void);
+
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/

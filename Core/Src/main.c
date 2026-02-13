@@ -704,6 +704,8 @@ int main(void)
 
   }
 
+  CM_Board = Recever_Board;
+
   Board_Config(CM_Board);
 
   Info_Set(CM_Board);
@@ -725,6 +727,11 @@ int main(void)
 
 
   Read_Start_Sub_Com = 1;
+
+
+  run_test();
+
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -2236,6 +2243,123 @@ void Read_Sub_Version(void){
 		  }
 	  }
 
+}
+
+void Read_Sub_Group(uint8_t main, uint8_t sub){
+
+	uint8_t Crc_Data;
+	uint16_t Send_data_Len = 9;
+
+	UI_UART_Tx_buf[0] = 0x53;
+	UI_UART_Tx_buf[1] = 0x54;
+	UI_UART_Tx_buf[2] = 0x55;
+	UI_UART_Tx_buf[3] = 0x41;
+	UI_UART_Tx_buf[4] = main;
+	UI_UART_Tx_buf[5] = sub;
+	UI_UART_Tx_buf[6] = 0;
+	UI_UART_Tx_buf[7] = 0x45;
+	UI_UART_Tx_buf[8] = 0x44;
+
+	Crc_Data = 0;
+	for(int i=2 ; i< (Send_data_Len - 3) ; i++){
+		Crc_Data = Crc_Data ^ UI_UART_Tx_buf[i];
+	}
+
+	UI_UART_Tx_buf[6] = Crc_Data;
+
+	HAL_GPIO_WritePin(UI_485_DC_GPIO_Port, UI_485_DC_Pin, GPIO_PIN_SET); // sp3485EN-L is tx mode
+	LED_Control(UI_485_TX_LED_GPIO_Port, UI_485_TX_LED_Pin , LED_On);
+	//HAL_Delay(1);
+
+	HAL_UART_Transmit(&hlpuart1, UI_UART_Tx_buf, Send_data_Len,1000);
+
+	HAL_GPIO_WritePin(UI_485_DC_GPIO_Port, UI_485_DC_Pin, GPIO_PIN_RESET); // rx mode
+	LED_Control(UI_485_TX_LED_GPIO_Port, UI_485_TX_LED_Pin , LED_Off);
+	//HAL_Delay(1);
+
+}
+
+void Send_Set_Infomation(uint8_t main, uint8_t sub){
+
+	uint16_t Send_data_Len = 456;
+	uint8_t Rep_Crc_Data[Send_data_Len - 6];
+	uint16_t cal_crc16 = 0;
+
+
+	UI_UART_Tx_buf[0] = 0x53;
+	UI_UART_Tx_buf[1] = 0x54;
+	UI_UART_Tx_buf[2] = 0x55;
+	UI_UART_Tx_buf[3] = 0x49;
+	UI_UART_Tx_buf[4] = main;
+	UI_UART_Tx_buf[5] = sub;
+	UI_UART_Tx_buf[6] = 0x1A;
+	UI_UART_Tx_buf[7] = 0x02;
+	UI_UART_Tx_buf[8] = 0x0D;
+	UI_UART_Tx_buf[9] = 0x02;
+	UI_UART_Tx_buf[10] = 0x0D;
+	UI_UART_Tx_buf[11] = 0x0E;
+
+	for(int i=0; i<220 ; i++){
+		UI_UART_Tx_buf[11+(2*i)+1] = i+1;
+		UI_UART_Tx_buf[11+(2*i)+2] = 1;
+	}
+
+	for(int i=0; i<(Send_data_Len - 6) ; i++){
+		Rep_Crc_Data[i] = UI_UART_Tx_buf[2+i];
+	}
+	cal_crc16 = CRC16(Rep_Crc_Data, sizeof(Rep_Crc_Data)/sizeof(uint8_t));
+
+	UI_UART_Tx_buf[452] = (cal_crc16 >> 8)& 0xff;
+	UI_UART_Tx_buf[453] = (cal_crc16 >> 0)& 0xff;
+
+	UI_UART_Tx_buf[454] = 0x45;
+	UI_UART_Tx_buf[455] = 0x44;
+
+
+	HAL_GPIO_WritePin(UI_485_DC_GPIO_Port, UI_485_DC_Pin, GPIO_PIN_SET); // sp3485EN-L is tx mode
+	LED_Control(UI_485_TX_LED_GPIO_Port, UI_485_TX_LED_Pin , LED_On);
+	//HAL_Delay(1);
+
+	HAL_UART_Transmit(&hlpuart1, UI_UART_Tx_buf, Send_data_Len,1000);
+
+	HAL_GPIO_WritePin(UI_485_DC_GPIO_Port, UI_485_DC_Pin, GPIO_PIN_RESET); // rx mode
+	LED_Control(UI_485_TX_LED_GPIO_Port, UI_485_TX_LED_Pin , LED_Off);
+	//HAL_Delay(1);
+
+}
+
+void run_test(void){
+
+	for(int i=0; i<4 ; i++){
+		for(int j=0; j<8; j++){
+			Send_Set_Infomation(i+1, j+1);
+			HAL_Delay(10);
+		}
+	}
+
+	while(1){
+		/* Enable the UART Error Interrupt: (Frame error, noise error, overrun error) */
+		__HAL_UART_ENABLE_IT(&hlpuart1, UART_IT_ERR);
+		/* Enable the UART Data Register not empty Interrupt */
+		__HAL_UART_ENABLE_IT(&hlpuart1, UART_IT_RXNE);
+	/*
+		Read_Sub_Group(24,1);
+		HAL_Delay(100);
+	*/
+
+		for(int i=0; i<4 ; i++){
+			for(int j=0; j<8; j++){
+				Read_Sub_Group(i+1,j+1);
+
+				for(int k=0; k<25; k++){
+					Check_UI_UART_Receive(UI_UART_Receive_complete);
+					HAL_Delay(1);
+				}
+
+			}
+		}
+		HAL_Delay(700);
+	}
 }
 /* USER CODE END 4 */
 

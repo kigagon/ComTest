@@ -693,13 +693,19 @@ void LPUART1_IRQHandler(void)
 
 	UI_UART_buf_count++;
 
-if((UI_UART_RX_buf_tmp[UI_UART_buf_count-3] == 0x53)&(UI_UART_RX_buf_tmp[UI_UART_buf_count-2] == 0x54)
-		  &(UI_UART_RX_buf_tmp[UI_UART_buf_count-1] == 0x55))
+if((UI_UART_RX_buf_tmp[UI_UART_buf_count-3] == 0x53)&(UI_UART_RX_buf_tmp[UI_UART_buf_count-2] == 0x54))
+//		  &(UI_UART_RX_buf_tmp[UI_UART_buf_count-1] == 0x55))
 	{
 	  UI_UART_State = 1;
+	  /*
 	  UI_UART_RX_buf_tmp[0] = 0x53;
 	  UI_UART_RX_buf_tmp[1] = 0x54;
 	  UI_UART_RX_buf_tmp[2] = 0x55;
+	  */
+	  UI_UART_RX_buf_tmp[0] = UI_UART_RX_buf_tmp[UI_UART_buf_count-3];
+	  UI_UART_RX_buf_tmp[1] = UI_UART_RX_buf_tmp[UI_UART_buf_count-2];
+	  UI_UART_RX_buf_tmp[2] = UI_UART_RX_buf_tmp[UI_UART_buf_count-1];
+
 	  UI_UART_buf_count = 3;
 	  HAL_GPIO_WritePin(UI_485_RX_LED_GPIO_Port, UI_485_RX_LED_Pin, GPIO_PIN_RESET);
 	}

@@ -35,3 +35,5 @@ void UI_Com_Func_Anal_LED_Set(void);
 
 void Def_Send_Data(void);
 void Init_Group_Data(void);
+
+void UI_Cmd_Func_r(void);
