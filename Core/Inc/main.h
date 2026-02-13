@@ -220,7 +220,6 @@ void run_test(void);
 //Array to store sub-64 system information, located in sdram2 (0x30000000)
 // Group_Data[8][8][1110]
 extern uint8_t Group_Data[Group_Max_Number][SUB_Group_Max_Number][Repeater_Header_Number +(Repeater_Number * Repeater_Data_Number) + Repeater_Crc_Number + Repeater_End_Number];
-extern uint8_t Group_Tmp_Data[Group_Max_Number][SUB_Group_Max_Number][Repeater_Header_Number +(Repeater_Number * Repeater_Data_Number) + Repeater_Crc_Number + Repeater_End_Number];
 
 //Array to store lower 8 relay panel power board information
 //Pow_Bod_Data[8][16]
@@ -329,6 +328,10 @@ extern uint8_t Com_Version_Data[Com_Version_Data_Number];
 extern uint8_t Rep_Version_Data[Group_Max_Number][SUB_Group_Max_Number][Rep_Version_Data_Number];
 
 extern uint8_t Sub_Version_Read_Cnt;
+
+extern uint8_t Group_Tmp_Data[Group_Max_Number][SUB_Group_Max_Number][Repeater_Header_Number +(Repeater_Number * Repeater_Data_Number) + Repeater_Crc_Number + Repeater_End_Number];
+
+
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus
